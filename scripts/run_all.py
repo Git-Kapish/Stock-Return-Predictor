@@ -10,7 +10,7 @@ from srp.config import load_config, set_seed, setup_logging
 from srp.data import build_panel, load_panel
 from srp.features import build_features
 from srp.labels import build_labels
-from srp.pipeline import train_models
+from srp.pipeline import run_backtest, train_models
 
 log = logging.getLogger("run_all")
 
@@ -28,6 +28,7 @@ STAGES: dict[str, callable] = {
     "data": build_panel,
     "features": build_features_stage,
     "train": train_models,
+    "backtest": run_backtest,
 }
 
 

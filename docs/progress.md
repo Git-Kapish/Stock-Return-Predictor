@@ -27,3 +27,18 @@
 - Configs were fixed before running (no tuning); each is one row in `results/trials.csv`. Full train takes ~22 min on CPU (LSTM dominates).
 - None beats zero in R2; the linear baseline is the best IC, so trees/nets add nothing here.
 - LSTM minibatch order is shuffled (seeded) inside the training slice only; train/val/test stay time-ordered.
+
+## M5: portfolio + backtest + sensitivity
+Decile long/short (long leg +1, short leg -1, equal weight, rebalanced daily). Sharpe is annualised daily, no risk-free. OOS 2014-05..2026-11. Lag 0 = trade at signal close, lag 1 = enter next close. Net = gross minus bps per side on traded notional.
+
+| model | lag | gross Sharpe | net Sharpe @5bps | net @10bps | daily turnover (sum abs dw) |
+|---|---|---|---|---|---|
+| ridge | 0 | -0.21 | -1.52 | -2.83 | 2.21 |
+| ridge | 1 | 0.14 | -1.18 | -2.49 | 2.21 |
+| rf | 0 | 0.18 | -1.33 | -2.85 | 2.56 |
+| rf | 1 | -0.07 | -1.63 | -3.18 | 2.56 |
+| lstm | 0 | 0.01 | -0.92 | -1.84 | 1.58 |
+| lstm | 1 | 0.06 | -0.87 | -1.80 | 1.58 |
+| equal-weight B&H (long only) | - | 0.85 (no costs) | | | 0 |
+- No model has a gross edge distinguishable from zero, and turnover (~1.1x the gross book per day) makes every net Sharpe strongly negative. Gross Sharpe flips sign between lag 0 and lag 1 for ridge and rf, which is what noise looks like.
+- Turnover ignores intraday weight drift. The benchmark is long-only so its Sharpe is not comparable to a market-neutral book.
