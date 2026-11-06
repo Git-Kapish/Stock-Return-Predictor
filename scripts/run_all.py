@@ -6,9 +6,10 @@ import argparse
 import logging
 
 from srp.config import load_config, set_seed, setup_logging
+from srp.data import build_panel
 
 log = logging.getLogger("run_all")
-STAGES: dict[str, callable] = {}
+STAGES: dict[str, callable] = {"data": build_panel}
 
 
 def main() -> None:
