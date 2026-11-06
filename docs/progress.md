@@ -17,3 +17,13 @@
 - Expanding window: 504-day initial train, 63-day test blocks, 5-day purge -> 50 folds, OOS 2014-05-13..2026-11-04 (3,140 days).
 - Ridge (alpha=1000, fixed in config before the run): mean IC 0.0071, t=1.98 (naive, daily ICs treated as independent), OOS R2 vs zero -0.0002.
 - Lesson: the permuted-label null test must use a panel with no planted signal. With a signal, a ridge fit to shuffled labels gets a random coefficient direction and IC swings +-0.08 by chance (checked over 8 seeds). That is not a leak.
+
+## M4: RF and LSTM (same protocol as Ridge)
+| model | mean IC | IC t (naive) | OOS R2 vs 0 |
+|---|---|---|---|
+| ridge | 0.0071 | 1.98 | -0.00021 |
+| rf | 0.0053 | 1.56 | -0.00014 |
+| lstm | 0.0034 | 0.91 | -0.00021 |
+- Configs were fixed before running (no tuning); each is one row in `results/trials.csv`. Full train takes ~22 min on CPU (LSTM dominates).
+- None beats zero in R2; the linear baseline is the best IC, so trees/nets add nothing here.
+- LSTM minibatch order is shuffled (seeded) inside the training slice only; train/val/test stay time-ordered.

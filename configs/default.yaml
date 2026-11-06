@@ -49,7 +49,7 @@ walkforward:
   expanding: true
 
 models:
-  enabled: [ridge]
+  enabled: [ridge, rf, lstm]
   ridge:
     alpha: 1000.0
   rf:

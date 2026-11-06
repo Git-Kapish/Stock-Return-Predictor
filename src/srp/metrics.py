@@ -35,3 +35,35 @@ def oos_r2(pred: pd.Series, y: pd.Series) -> float:
     """OOS R^2 versus a zero forecast: 1 - sum((y-p)^2) / sum(y^2). Positive = beats zero."""
     df = pd.concat({"p": pred, "y": y}, axis=1).dropna()
     return float(1 - ((df["y"] - df["p"]) ** 2).sum() / (df["y"] ** 2).sum())
+
+
+def sharpe(r: pd.Series, periods: int = 252) -> float:
+    """Annualised Sharpe of daily returns (zero risk-free; long/short book is self-financing)."""
+    sd = r.std()
+    return float(r.mean() / sd * np.sqrt(periods)) if sd > 0 else float("nan")
+
+
+def sortino(r: pd.Series, periods: int = 252) -> float:
+    """Annualised mean over downside deviation (target 0, divided by all observations)."""
+    dd = np.sqrt((np.minimum(r, 0) ** 2).mean())
+    return float(r.mean() / dd * np.sqrt(periods)) if dd > 0 else float("nan")
+
+
+def max_drawdown(r: pd.Series) -> float:
+    """Worst peak-to-trough fall of compounded wealth (a negative number)."""
+    w = (1 + r).cumprod()
+    return float((w / w.cummax() - 1).min())
+
+
+def perf_summary(df: pd.DataFrame, periods: int = 252, col: str = "net") -> dict[str, float]:
+    """Annualised stats of ``df[col]`` plus hit rate and mean turnover from ``df['turnover']``."""
+    r = df[col]
+    return {
+        "ann_return": float(r.mean() * periods),
+        "ann_vol": float(r.std() * np.sqrt(periods)),
+        "sharpe": sharpe(r, periods),
+        "sortino": sortino(r, periods),
+        "max_drawdown": max_drawdown(r),
+        "hit_rate": float((r > 0).mean()),
+        "daily_turnover": float(df["turnover"].mean()),
+    }

@@ -41,7 +41,11 @@ def make_folds(
 
 
 def walk_forward(
-    model_factory: Callable[[], Any], X: pd.DataFrame, y: pd.Series, folds: list[Fold]
+    model_factory: Callable[[], Any],
+    X: pd.DataFrame,
+    y: pd.Series,
+    folds: list[Fold],
+    importances: list | None = None,
 ) -> pd.Series:
     """Fit a fresh model per fold and return concatenated OOS predictions.
 
@@ -53,6 +57,8 @@ def walk_forward(
         model = model_factory()
         model.fit(X, y, f.train_dates)
         p = model.predict(X, f.test_dates)
+        if importances is not None and hasattr(model, "importance"):
+            importances.append(model.importance())
         log.info(
             "fold %d/%d train %s..%s test %s..%s",
             i + 1,
