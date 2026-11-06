@@ -8,7 +8,10 @@ data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 results/figures/*
-results/tables/*
 !results/figures/.gitkeep
+!results/figures/*.png
+results/tables/*
 !results/tables/.gitkeep
+!results/tables/*.csv
+!results/tables/*.md
 .ipynb_checkpoints/

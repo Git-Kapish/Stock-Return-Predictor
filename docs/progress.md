@@ -56,3 +56,9 @@ Stationary block bootstrap (5,000 draws, mean block 10d), within-day permutation
 | lstm | 1 | 0 | 0.06 | [-0.54, 0.66] | 0.43 | - | 0.11 |
 - Every gross CI contains zero; no permutation p-value is below 0.25. With 5 bps/side every net CI is entirely below zero (P(Sharpe<=0) >= 0.998).
 - Conclusion for the writeup: no edge survives, before or after costs.
+
+## M7: report + README
+- `report.py`: equity curves (log), bootstrap vs permutation null, feature importance, IC by month, cost/lag sensitivity, markdown tables.
+- README with results, uncertainty, limitations (survivorship bias etc.) and the López de Prado discussion.
+- Learned: RF importance is dominated by the two day-level market features (cannot rank stocks within a day), i.e. it fits noise. Ridge is not dominated by 1-day reversal.
+- Reproduced from a clean clone (tests, data, features); the 22-min training step was not re-run there.

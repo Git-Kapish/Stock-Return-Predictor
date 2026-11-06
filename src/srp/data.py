@@ -14,6 +14,8 @@ from typing import Any
 import pandas as pd
 
 log = logging.getLogger(__name__)
+# Security: pickles here (raw cache, processed panels/predictions) are written and read only by
+# this pipeline on the local machine and are git-ignored; never point the paths at untrusted files.
 FIELDS = ["open", "high", "low", "close", "volume"]
 Panel = dict[str, pd.DataFrame]
 
