@@ -1,0 +1,84 @@
+# Every parameter lives here. Fixed before looking at any test result.
+seed: 42
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  results: results
+  figures: results/figures
+  tables: results/tables
+  trials: results/trials.csv
+
+data:
+  source: yfinance
+  start: "2012-01-01"
+  end: null              # null = latest available
+  universe_size: 75
+  selection_window_days: 252   # first year of sample: rank by mean dollar volume
+  min_history_frac: 0.98       # candidate must have data for this share of the selection window
+  candidates: [
+    AAPL, MSFT, AMZN, GOOGL, JNJ, JPM, XOM, WMT, PG, KO, PEP, CVX, PFE, MRK, T, VZ, CSCO, INTC,
+    ORCL, IBM, BAC, WFC, C, GS, MS, AXP, USB, PNC, COF, SCHW, BLK, MET, PRU, AIG, ALL, TRV, CB,
+    HD, LOW, TGT, COST, MCD, SBUX, NKE, DIS, CMCSA, FDX, UPS, UNP, CSX, NSC, BA, LMT, RTX, GD,
+    NOC, HON, MMM, GE, CAT, DE, EMR, ITW, ETN, UNH, ABT, MDT, AMGN, GILD, BMY, LLY, TMO, DHR,
+    BDX, SYK, BAX, CVS, CI, ANTM, ABBV, COP, SLB, OXY, EOG, HAL, MPC, VLO, PSX, KMI, WMB, DUK,
+    SO, D, EXC, AEP, NEE, SRE, ED, XEL, PCG, QCOM, TXN, ADI, AMAT, MU, NVDA, ADBE, CRM, EBAY,
+    AMGN, MO, PM, CL, KMB, GIS, K, HSY, MDLZ, KR, WBA, SYY, ADM, MON, DOW, DD, LIN, APD, ECL,
+    SHW, NEM, FCX, IP, PPG, MAR, YUM, ROST, TJX, GPS, BBY, F, GM, ADP, PAYX, AMT, SPG, PLD,
+    EQIX, PSA, CCI, TROW, BK, STT, AFL, HIG, LNC, CME, ICE, SPGI, MCO
+  ]
+
+features:
+  return_lags: [1, 2, 3, 5, 10, 21]
+  ma_windows: [5, 10, 20, 50]
+  rsi_window: 14
+  vol_windows: [5, 21]
+  volume_z_window: 21
+  market_features: true
+  lstm_features: [ret_1, ret_5, ma_ratio_20, rsi_14, vol_21, volume_z, hl_range]
+
+label:
+  horizon: 1                 # days; close t -> close t+1
+  winsor_quantiles: [0.01, 0.99]
+  demean_cross_section: true
+
+walkforward:
+  initial_train_days: 504    # ~2 years
+  test_block_days: 63        # refit every ~quarter
+  purge_days: 5              # >= label horizon
+  expanding: true
+
+models:
+  ridge:
+    alpha: 1000.0
+  rf:
+    n_estimators: 200
+    max_depth: 6
+    min_samples_leaf: 500
+    max_features: 0.33
+    n_jobs: -1
+  lstm:
+    seq_len: 20
+    hidden_size: 16
+    num_layers: 1
+    dropout: 0.0
+    lr: 0.001
+    weight_decay: 0.0001
+    batch_size: 1024
+    max_epochs: 15
+    patience: 3
+    val_frac: 0.15           # LAST 15% of training dates (time-ordered)
+    device: cpu
+
+portfolio:
+  n_deciles: 10
+  cost_bps_per_side: [0, 5, 10]
+  base_cost_bps: 5
+  execution_lags: [0, 1]     # 0 = trade at signal close, 1 = next close
+  periods_per_year: 252
+
+montecarlo:
+  n_boot: 5000
+  mean_block: 10
+  n_perm: 1000
+  ci_level: 0.95
