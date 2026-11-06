@@ -49,6 +49,7 @@ walkforward:
   expanding: true
 
 models:
+  enabled: [ridge]
   ridge:
     alpha: 1000.0
   rf:
