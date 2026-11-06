@@ -39,3 +39,27 @@ def test_oos_r2_vs_zero():
     assert np.isclose(oos_r2(y, y), 1.0)
     assert np.isclose(oos_r2(y * 0, y), 0.0)
     assert oos_r2(-y, y) < 0
+
+
+def test_psr_half_at_own_sharpe_and_monotone():
+    from srp.metrics import psr
+
+    rng = np.random.default_rng(0)
+    r = pd.Series(rng.normal(0.001, 0.01, 1000))
+    sr = r.mean() / r.std()
+    assert np.isclose(psr(r, sr), 0.5)
+    assert psr(r, 0.0) > psr(r, sr) > psr(r, 2 * sr)
+
+
+def test_expected_max_sharpe_hand_computed():
+    from scipy import stats
+
+    from srp.metrics import dsr, expected_max_sharpe, psr
+
+    s = np.array([0.0, 0.1, 0.2, 0.3])
+    g = 0.5772156649015329
+    z = (1 - g) * stats.norm.ppf(1 - 1 / 4) + g * stats.norm.ppf(1 - 1 / (4 * np.e))
+    assert np.isclose(expected_max_sharpe(s), np.std(s, ddof=1) * z)
+    r = pd.Series(np.random.default_rng(1).normal(0.001, 0.01, 500))
+    assert np.isclose(dsr(r, np.array([0.05])), psr(r, 0.0))  # one trial -> no deflation
+    assert dsr(r, s) < psr(r, 0.0)  # more trials -> harder to be significant

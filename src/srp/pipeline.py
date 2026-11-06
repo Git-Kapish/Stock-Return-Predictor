@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from srp.metrics import daily_ic, ic_summary, oos_r2
@@ -120,4 +121,64 @@ def run_backtest(cfg: dict[str, Any]) -> pd.DataFrame:
     out.to_csv(Path(cfg["paths"]["tables"]) / "sensitivity.csv", index=False)
     pd.to_pickle(series, Path(cfg["paths"]["processed"]) / "backtest.pkl")
     log.info("\n%s", out.round(3).to_string())
+    return out
+
+
+def run_montecarlo(cfg: dict[str, Any]) -> pd.DataFrame:
+    """Bootstrap CIs, permutation null and PSR/DSR for each model x lag x {0, base} bps.
+
+    Trials for the DSR are the base-cost net Sharpes of every model x lag evaluated.
+    Writes ``results/tables/montecarlo.csv`` and ``data/processed/mc.pkl`` (distributions).
+    """
+    from srp.metrics import dsr, psr
+    from srp.montecarlo import (
+        bootstrap_stats,
+        permutation_null_sharpes,
+        permutation_pvalue,
+        summarize,
+    )
+
+    mc, pc = cfg["montecarlo"], cfg["portfolio"]
+    rng = np.random.default_rng(cfg["seed"])
+    series = pd.read_pickle(Path(cfg["paths"]["processed"]) / "backtest.pkl")
+    _, lab = load_xy(cfg)
+    ret = lab["ret_fwd"].unstack("ticker")
+    ann = np.sqrt(pc["periods_per_year"])
+    trials = [
+        v["net"].mean() / v["net"].std()
+        for (m, lag, bps), v in series.items()
+        if m != "benchmark" and bps == pc["base_cost_bps"]
+    ]
+    log.info("DSR over %d trials (model x lag at %s bps)", len(trials), pc["base_cost_bps"])
+    rows, dists = [], {}
+    for (name, lag, bps), bt in series.items():
+        if name == "benchmark" or bps not in (0, pc["base_cost_bps"]):
+            continue
+        r = bt["net"]
+        dist = bootstrap_stats(
+            r.to_numpy(), mc["n_boot"], mc["mean_block"], rng, pc["periods_per_year"]
+        )
+        row = {"model": name, "lag": lag, "cost_bps": bps, "sharpe": r.mean() / r.std() * ann}
+        row |= summarize(dist, mc["ci_level"])
+        row["wealth_median"] = float(np.median(dist["final_wealth"]))
+        row["psr_vs0"], row["dsr"] = psr(r), dsr(r, np.array(trials))
+        dists[(name, lag, bps)] = dist["sharpe"]
+        if bps == 0:  # gross book: permutation null for skill
+            pred = pd.read_pickle(Path(cfg["paths"]["processed"]) / f"preds_{name}.pkl")
+            null = permutation_null_sharpes(
+                pred.unstack("ticker"),
+                ret,
+                pc["n_deciles"],
+                mc["n_perm"],
+                rng,
+                pc["periods_per_year"],
+            )
+            row["perm_p"] = permutation_pvalue(row["sharpe"], null) if lag == 0 else np.nan
+            if lag == 0:
+                dists[(name, "null")] = null
+        rows.append(row)
+    out = pd.DataFrame(rows)
+    out.to_csv(Path(cfg["paths"]["tables"]) / "montecarlo.csv", index=False)
+    pd.to_pickle(dists, Path(cfg["paths"]["processed"]) / "mc.pkl")
+    log.info("montecarlo results:\n%s", out.round(3).to_string())
     return out

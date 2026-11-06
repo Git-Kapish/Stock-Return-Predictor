@@ -67,3 +67,36 @@ def perf_summary(df: pd.DataFrame, periods: int = 252, col: str = "net") -> dict
         "hit_rate": float((r > 0).mean()),
         "daily_turnover": float(df["turnover"].mean()),
     }
+
+
+def psr(r: pd.Series, sr_benchmark: float = 0.0) -> float:
+    """Probabilistic Sharpe Ratio (Bailey & Lopez de Prado): P(true daily SR > ``sr_benchmark``).
+
+    Everything is in DAILY units (not annualised); accounts for skew and kurtosis and sample size.
+    """
+    from scipy import stats
+
+    sr, n = r.mean() / r.std(), len(r)
+    skew, kurt = stats.skew(r), stats.kurtosis(r, fisher=False)
+    denom = np.sqrt(1 - skew * sr + (kurt - 1) / 4 * sr**2)
+    return float(stats.norm.cdf((sr - sr_benchmark) * np.sqrt(n - 1) / denom))
+
+
+def expected_max_sharpe(trial_sharpes: np.ndarray) -> float:
+    """Expected maximum daily Sharpe among N skill-less trials, given the variance of the trials."""
+    from scipy import stats
+
+    n = len(trial_sharpes)
+    if n < 2:
+        return 0.0
+    g = 0.5772156649015329  # Euler-Mascheroni
+    z = (1 - g) * stats.norm.ppf(1 - 1 / n) + g * stats.norm.ppf(1 - 1 / (n * np.e))
+    return float(np.sqrt(np.var(trial_sharpes, ddof=1)) * z)
+
+
+def dsr(r: pd.Series, trial_sharpes: np.ndarray) -> float:
+    """Deflated Sharpe Ratio: PSR against the expected best Sharpe of ``len(trial_sharpes)`` trials.
+
+    ``trial_sharpes`` are the DAILY Sharpes of every configuration evaluated (selection bias).
+    """
+    return psr(r, expected_max_sharpe(np.asarray(trial_sharpes)))

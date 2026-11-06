@@ -7,7 +7,7 @@ endif
 PY ?= $(VENV_PY)
 CFG ?= configs/default.yaml
 
-.PHONY: setup data features train backtest report test lint all
+.PHONY: setup data features train backtest montecarlo report test lint all
 setup:
 	python -m venv .venv
 	$(VENV_PY) -m pip install -U pip
@@ -20,9 +20,11 @@ train:
 	$(PY) scripts/run_all.py train --config $(CFG)
 backtest:
 	$(PY) scripts/run_all.py backtest --config $(CFG)
+montecarlo:
+	$(PY) scripts/run_all.py montecarlo --config $(CFG)
 report:
 	$(PY) scripts/run_all.py report --config $(CFG)
-all: data features train backtest report
+all: data features train backtest montecarlo report
 test:
 	$(PY) -m pytest -q
 lint:

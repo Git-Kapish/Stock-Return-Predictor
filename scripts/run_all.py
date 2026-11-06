@@ -10,7 +10,7 @@ from srp.config import load_config, set_seed, setup_logging
 from srp.data import build_panel, load_panel
 from srp.features import build_features
 from srp.labels import build_labels
-from srp.pipeline import run_backtest, train_models
+from srp.pipeline import run_backtest, run_montecarlo, train_models
 
 log = logging.getLogger("run_all")
 
@@ -29,12 +29,15 @@ STAGES: dict[str, callable] = {
     "features": build_features_stage,
     "train": train_models,
     "backtest": run_backtest,
+    "montecarlo": run_montecarlo,
 }
 
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("stage", choices=["data", "features", "train", "backtest", "report", "all"])
+    p.add_argument(
+        "stage", choices=["data", "features", "train", "backtest", "montecarlo", "report", "all"]
+    )
     p.add_argument("--config", default="configs/default.yaml")
     a = p.parse_args()
     setup_logging()

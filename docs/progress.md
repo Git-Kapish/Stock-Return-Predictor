@@ -42,3 +42,17 @@ Decile long/short (long leg +1, short leg -1, equal weight, rebalanced daily). S
 | equal-weight B&H (long only) | - | 0.85 (no costs) | | | 0 |
 - No model has a gross edge distinguishable from zero, and turnover (~1.1x the gross book per day) makes every net Sharpe strongly negative. Gross Sharpe flips sign between lag 0 and lag 1 for ridge and rf, which is what noise looks like.
 - Turnover ignores intraday weight drift. The benchmark is long-only so its Sharpe is not comparable to a market-neutral book.
+
+## M6: Monte Carlo + DSR
+Stationary block bootstrap (5,000 draws, mean block 10d), within-day permutation null (1,000 runs, gross lag-0 book), PSR and DSR (6 trials = 3 models x 2 lags at 5 bps; daily Sharpes). 95% CIs below.
+
+| model | lag | cost | Sharpe | 95% CI | P(Sharpe<=0) | perm p (gross, lag 0) | DSR |
+|---|---|---|---|---|---|---|---|
+| ridge | 0 | 0 | -0.21 | [-0.73, 0.37] | 0.76 | 0.79 | 0.02 |
+| ridge | 1 | 0 | 0.14 | [-0.42, 0.76] | 0.32 | - | 0.18 |
+| rf | 0 | 0 | 0.18 | [-0.32, 0.69] | 0.25 | 0.26 | 0.21 |
+| rf | 1 | 0 | -0.07 | [-0.58, 0.47] | 0.61 | - | 0.05 |
+| lstm | 0 | 0 | 0.01 | [-0.54, 0.55] | 0.49 | 0.47 | 0.08 |
+| lstm | 1 | 0 | 0.06 | [-0.54, 0.66] | 0.43 | - | 0.11 |
+- Every gross CI contains zero; no permutation p-value is below 0.25. With 5 bps/side every net CI is entirely below zero (P(Sharpe<=0) >= 0.998).
+- Conclusion for the writeup: no edge survives, before or after costs.
