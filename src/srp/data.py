@@ -97,3 +97,8 @@ def build_panel(cfg: dict[str, Any]) -> Panel:
     pd.to_pickle(panel, out)
     log.info("panel %s -> %s (universe %d)", panel["close"].shape, out, len(tickers))
     return panel
+
+
+def load_panel(cfg: dict[str, Any]) -> Panel:
+    """Read the processed universe panel written by ``build_panel``."""
+    return pd.read_pickle(Path(cfg["paths"]["processed"]) / "panel.pkl")

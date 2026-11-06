@@ -4,12 +4,26 @@ from __future__ import annotations
 
 import argparse
 import logging
+from pathlib import Path
 
 from srp.config import load_config, set_seed, setup_logging
-from srp.data import build_panel
+from srp.data import build_panel, load_panel
+from srp.features import build_features
+from srp.labels import build_labels
 
 log = logging.getLogger("run_all")
-STAGES: dict[str, callable] = {"data": build_panel}
+
+
+def build_features_stage(cfg: dict) -> None:
+    panel = load_panel(cfg)
+    feats, labels = build_features(panel, cfg), build_labels(panel, cfg)
+    out = Path(cfg["paths"]["processed"])
+    feats.to_pickle(out / "features.pkl")
+    labels.to_pickle(out / "labels.pkl")
+    log.info("features %s labels %s", feats.shape, labels.shape)
+
+
+STAGES: dict[str, callable] = {"data": build_panel, "features": build_features_stage}
 
 
 def main() -> None:
